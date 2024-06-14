@@ -1,0 +1,21 @@
+import os
+
+def rename_files_to_continuous(directory):
+    files = os.listdir(directory)
+    # Sort files by their name (assuming filenames contain numbers)
+    files.sort(key=lambda x: int(x.split('.')[0]))
+
+    # Renaming files to continuous numbers
+    for i, filename in enumerate(files, start=1):
+        # Split filename and extension
+        name, ext = os.path.splitext(filename)
+        # Extract the number part and convert to integer
+        num = int(name)
+        # Format the number with leading zeros
+        new_filename = "{:03d}{}".format(i, ext)
+        # Rename the file
+        os.rename(os.path.join(directory, filename), os.path.join(directory, new_filename))
+
+# Example usage:
+directory_path = r'C:\i.bug data\N2'  # Using raw string literal
+rename_files_to_continuous(directory_path)
