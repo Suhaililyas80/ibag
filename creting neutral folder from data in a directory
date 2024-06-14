@@ -1,0 +1,96 @@
+import os
+import json
+import shutil
+from collections import defaultdict
+import matplotlib.pyplot as plt
+
+def plot_histogram(data, title, xlabel, ylabel, filename):
+    plt.bar(data.keys(), data.values())
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.savefig(filename)
+    plt.show()
+
+def read_json_files(folder_path):
+    data_array = []
+
+    # Loop through folder names from 001 to 600
+    for i in range(1, 601):
+        folder_name = f"{i:03d}"  # Format number with leading zeros (e.g., 001, 002, ..., 600)
+        folder_full_path = os.path.join(folder_path, folder_name)
+        json_file_path = os.path.join(folder_full_path, f"{folder_name}.json")
+
+        # Check if JSON file exists in the folder
+        if os.path.exists(json_file_path):
+            with open(json_file_path, 'r') as json_file:
+                data = json.load(json_file)
+                data_array.append((folder_name, data))
+        else:
+            print(f"JSON file {json_file_path} does not exist.")
+
+    return data_array
+
+# Example usage:
+folder_path = r'C:\i.bug data\111'  # Update this to the path where the folders are located
+data_array = read_json_files(folder_path)
+
+folder_names = [f"{i:03d}" for i in range(1, 601)]
+
+# Initialize dictionaries to store arousal and valence values
+arousal_count_total = defaultdict(int)
+valence_count_total = defaultdict(int)
+both_zero_count = 0
+
+all_neutral = []
+neutral_absent = []
+neutral_present = []
+
+for folder_name, data in data_array:
+    folder_neutral = defaultdict(list)
+    check = False
+    for frame_id, frame_data in data["frames"].items():
+        arousal = frame_data.get("arousal", None)
+        valence = frame_data.get("valence", None)
+        if arousal is not None:
+            arousal_count_total[arousal] += 1
+        if valence is not None:
+            valence_count_total[valence] += 1
+        if arousal == 0 and valence == 0:
+            both_zero_count += 1
+            check = True
+            folder_neutral[folder_name].append(frame_id)
+
+    if check:
+        all_neutral.append(folder_neutral)
+        neutral_present.append(folder_name)
+    else:
+        neutral_absent.append(folder_name)
+
+# Create a directory to save the neutral folders
+neutral_folder_path = r'C:\i.bug data\neutral_folders'
+os.makedirs(neutral_folder_path, exist_ok=True)
+
+# Loop to copy the neutral folders' JSON files and images into the new directory
+for folder in neutral_present:
+    src_json_path = os.path.join(folder_path, folder, f"{folder}.json")
+    dest_json_path = os.path.join(neutral_folder_path, folder, f"{folder}.json")
+    os.makedirs(os.path.dirname(dest_json_path), exist_ok=True)
+    if os.path.exists(src_json_path):
+        shutil.copy(src_json_path, dest_json_path)
+    else:
+        print(f"Source file {src_json_path} does not exist.")
+
+    # Assuming images are stored in a subfolder called "images"
+    src_image_folder = os.path.join(folder_path, folder, "images")
+    dest_image_folder = os.path.join(neutral_folder_path, folder, "images")
+    if os.path.exists(src_image_folder):
+        shutil.copytree(src_image_folder, dest_image_folder)
+    else:
+        print(f"Image folder {src_image_folder} does not exist.")
+
+print(neutral_present)
+
+# Plot histograms
+plot_histogram(arousal_count_total, "Arousal Distribution", "Arousal Value", "Frequency", "arousal_histogram.png")
+plot_histogram(valence_count_total, "Valence Distribution", "Valence Value", "Frequency", "valence_histogram.png")
