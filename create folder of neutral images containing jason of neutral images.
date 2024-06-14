@@ -1,0 +1,44 @@
+import os
+import json
+import shutil
+
+def read_json_files(folder_path, folder_range):
+    data_array = []
+
+    # Loop through specified folder range
+    for i in range(folder_range[0], folder_range[1] + 1):
+        folder_name = f"{i:03d}"  # Format number with leading zeros (e.g., 001, 002, ..., 089)
+        folder_full_path = os.path.join(folder_path, folder_name)
+        json_file_path = os.path.join(folder_full_path, f"{folder_name}_neutral.json")
+
+        # Check if JSON file exists in the folder
+        if os.path.exists(json_file_path):
+            with open(json_file_path, 'r') as json_file:
+                data = json.load(json_file)
+                data_array.append((folder_name, data))
+        else:
+            print(f"JSON file {json_file_path} does not exist.")
+
+    return data_array
+
+def save_images_with_condition(folder_path, folder_name, frame_ids):
+    # Create the subfolder for saving images
+    subfolder_path = os.path.join(folder_path, folder_name, "neutral_frames")
+    os.makedirs(subfolder_path, exist_ok=True)
+
+    for frame_id in frame_ids:
+        image_path = os.path.join(folder_path, folder_name, f"{frame_id}.png")
+        if os.path.exists(image_path):
+            shutil.copy(image_path, subfolder_path)
+        else:
+            print(f"Image {image_path} does not exist.")
+
+# Example usage:
+folder_path = r'C:\i.bug data\N6'  # Update this to the path where the folders are located
+folder_range = (1, 89)  # Update this to the desired folder range (start, end)
+data_array = read_json_files(folder_path, folder_range)
+
+for folder_name, data in data_array:
+    frame_ids = data.get("neutral_frames", [])
+    if frame_ids:
+        save_images_with_condition(folder_path, folder_name, frame_ids)
