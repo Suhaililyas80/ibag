@@ -1,0 +1,33 @@
+import os
+import cv2
+import torch
+from retinaface import RetinaFace
+
+def detect_and_crop_faces(image_path, save_folder):
+    # Load the image
+    image = cv2.imread(image_path)
+
+    # Detect faces in the image
+    faces = RetinaFace.detect_faces(image_path)
+    
+    if isinstance(faces, dict):
+        for i, (key, face) in enumerate(faces.items()):
+            facial_area = face['facial_area']
+            x, y, width, height = facial_area
+            cropped_face = image[y:height, x:width]
+
+            # Create a directory if it doesn't exist
+            if not os.path.exists(save_folder):
+                os.makedirs(save_folder)
+
+            # Save the cropped face
+            cropped_face_path = os.path.join(save_folder, f"cropped_face_{i}.jpg")
+            cv2.imwrite(cropped_face_path, cropped_face)
+            print(f"Cropped face saved to {cropped_face_path}")
+    else:
+        print("No faces detected.")
+
+# Example usage
+image_path = '/home/aryan/Srib_Intern/test/c.jpg'  # Replace with the path to your input image
+save_folder = '/home/aryan/Srib_Intern/test/output'  # Replace with the path to your output folder
+detect_and_crop_faces(image_path, save_folder)
