@@ -1,9 +1,8 @@
 import os
 import cv2
-import torch
 from retinaface import RetinaFace
 
-def detect_and_crop_faces(image_path, save_folder):
+def detect_and_crop_faces(image_path, save_folder, start_index):
     # Load the image
     image = cv2.imread(image_path)
 
@@ -11,6 +10,7 @@ def detect_and_crop_faces(image_path, save_folder):
     faces = RetinaFace.detect_faces(image_path)
     
     if isinstance(faces, dict):
+        count = start_index
         for i, (key, face) in enumerate(faces.items()):
             facial_area = face['facial_area']
             x, y, width, height = facial_area
@@ -20,14 +20,31 @@ def detect_and_crop_faces(image_path, save_folder):
             if not os.path.exists(save_folder):
                 os.makedirs(save_folder)
 
-            # Save the cropped face
-            cropped_face_path = os.path.join(save_folder, f"cropped_face_{i}.jpg")
+            # Save the cropped face with a sequential name
+            cropped_face_path = os.path.join(save_folder, f"{count:04d}.jpg")
             cv2.imwrite(cropped_face_path, cropped_face)
             print(f"Cropped face saved to {cropped_face_path}")
+            count += 1
+        return count
     else:
         print("No faces detected.")
+        return start_index
+
+def process_folders(base_folder):
+    for i in range(1, 90):  # From 001 to 089
+        folder_name = f"{i:03d}"
+        folder_path = os.path.join(base_folder, folder_name)
+        save_folder = os.path.join(folder_path, "cropped")
+
+        if os.path.exists(folder_path):
+            count = 0
+            for file_name in os.listdir(folder_path):
+                if file_name.endswith(".png"):
+                    image_path = os.path.join(folder_path, file_name)
+                    count = detect_and_crop_faces(image_path, save_folder, count)
+        else:
+            print(f"Folder {folder_name} does not exist.")
 
 # Example usage
-image_path = '/home/aryan/Srib_Intern/test/c.jpg'  # Replace with the path to your input image
-save_folder = '/home/aryan/Srib_Intern/test/output'  # Replace with the path to your output folder
-detect_and_crop_faces(image_path, save_folder)
+base_folder = r'C:\i.bug data\Neutral ev'  # Replace with the path to your base folder containing the folders 001 to 089
+process_folders(base_folder)
